@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-database"></i> Database Information</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Database File</h6>
+                                <p class="text-muted">{{ db_info.database_file }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>File Size</h6>
+                                <p class="text-muted">{{ db_info.file_size_mb }} MB</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card text-white bg-primary mb-3">
+                            <div class="card-body">
+                                <h6>Total Expenses</h6>
+                                <h4>{{ db_info.total_expenses }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-white bg-success mb-3">
+                            <div class="card-body">
+                                <h6>Total Amount</h6>
+                                <h4>${{ "%.2f"|format(db_info.total_amount) }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-white bg-info mb-3">
+                            <div class="card-body">
+                                <h6>Categories</h6>
+                                <h4>{{ db_info.categories_count }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Oldest Record</h6>
+                                <p class="text-muted">
+                                    {% if db_info.oldest_record %}
+                                        {{ db_info.oldest_record.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                        No records
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Newest Record</h6>
+                                <p class="text-muted">
+                                    {% if db_info.newest_record %}
+                                        {{ db_info.newest_record.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                        No records
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Database Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('export_expenses') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-download"></i> Export to CSV
+                    </a>
+                    <a href="{{ url_for('generate_sample_data_route') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-vial"></i> Generate Sample Data
+                    </a>
+                    <a href="{{ url_for('optimize_database') }}" class="btn btn-outline-info">
+                        <i class="fas fa-broom"></i> Optimize Database
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-dark">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6>Quick Stats</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Database Size:</span>
+                        <strong>{{ db_info.file_size_mb }} MB</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Total Records:</span>
+                        <strong>{{ db_info.total_expenses }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Data Range:</span>
+                        <strong>
+                            {% if db_info.oldest_record and db_info.newest_record %}
+                                {{ ((db_info.newest_record - db_info.oldest_record).days + 1) }} days
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

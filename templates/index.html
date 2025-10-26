@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-chart-line"></i> Expense Overview</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body text-center">
+                                <h5>Monthly Total</h5>
+                                <h2>${{ "%.2f"|format(monthly_total) }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card text-white bg-success">
+                            <div class="card-body text-center">
+                                <h5>Categories Used</h5>
+                                <h2>{{ category_totals|length }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if category_totals %}
+                <canvas id="overviewChart" width="400" height="200"></canvas>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No expenses yet</h5>
+                    <p class="text-muted">Start by adding your first expense!</p>
+                    <a href="{{ url_for('add_expense') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Expense
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-clock"></i> Recent Expenses</h4>
+            </div>
+            <div class="card-body">
+                {% if recent_expenses %}
+                    <div class="list-group">
+                        {% for expense in recent_expenses %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ expense['description'] }}</h6>
+                                <small class="text-muted">${{ "%.2f"|format(expense['amount']) }}</small>
+                            </div>
+                            <small class="text-muted">
+                                <span class="badge bg-secondary">{{ expense['category'] }}</span>
+                                • {{ expense['date'] }}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No expenses recorded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <a href="{{ url_for('add_expense') }}" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-plus"></i> Add New Expense
+                </a>
+                <a href="{{ url_for('export_expenses') }}" class="btn btn-outline-secondary btn-sm mt-2">
+                    <i class="fas fa-download"></i> Export to CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if category_totals %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('overviewChart').getContext('2d');
+    
+    // Prepare data for the chart
+    const labels = [
+        {% for cat in category_totals %}
+        '{{ cat["category"] }}'{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    const data = [
+        {% for cat in category_totals %}
+        {{ cat["total"] }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    const backgroundColors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+        '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+    ];
+    
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: backgroundColors.slice(0, labels.length),
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        boxWidth: 12
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-tags"></i> Expense Categories</h4>
+            </div>
+            <div class="card-body">
+                {% if categories %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Budget Limit</th>
+                                <th>Color</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr>
+                                <td>
+                                    <span class="badge" style="background-color: {{ category['color'] }}; color: white;">
+                                        {{ category['name'] }}
+                                    </span>
+                                </td>
+                                <td>${{ "%.2f"|format(category['budget_limit']) }}</td>
+                                <td>
+                                    <div style="width: 30px; height: 30px; background-color: {{ category['color'] }}; border-radius: 4px;"></div>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="editCategory({{ category['id'] }}, '{{ category['name'] }}', {{ category['budget_limit'] }}, '{{ category['color'] }}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="{{ url_for('delete_category', category_id=category['id']) }}" 
+                                           class="btn btn-outline-danger"
+                                           onclick="return confirm('Are you sure you want to delete this category?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No categories found</h5>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 id="formTitle">Add New Category</h5>
+            </div>
+            <div class="card-body">
+                <form id="categoryForm" method="POST" action="{{ url_for('add_category') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Category Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="budget_limit" class="form-label">Monthly Budget Limit ($)</label>
+                        <input type="number" step="0.01" class="form-control" id="budget_limit" name="budget_limit" value="0">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="color" class="form-label">Color</label>
+                        <input type="color" class="form-control" id="color" name="color" value="#007bff">
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-plus"></i> Add Category
+                        </button>
+                        <button type="button" class="btn btn-secondary mt-2" onclick="resetForm()" style="display: none;" id="cancelBtn">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let editingCategoryId = null;
+
+function editCategory(id, name, budgetLimit, color) {
+    editingCategoryId = id;
+    document.getElementById('name').value = name;
+    document.getElementById('budget_limit').value = budgetLimit;
+    document.getElementById('color').value = color;
+    
+    document.getElementById('formTitle').textContent = 'Edit Category';
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Update Category';
+    document.getElementById('categoryForm').action = `/update-category/${id}`;
+    document.getElementById('cancelBtn').style.display = 'block';
+    
+    // Scroll to form
+    document.getElementById('categoryForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetForm() {
+    editingCategoryId = null;
+    document.getElementById('categoryForm').reset();
+    document.getElementById('formTitle').textContent = 'Add New Category';
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus"></i> Add Category';
+    document.getElementById('categoryForm').action = "{{ url_for('add_category') }}";
+    document.getElementById('cancelBtn').style.display = 'none';
+    document.getElementById('color').value = '#007bff';
+}
+</script>
+{% endblock %}

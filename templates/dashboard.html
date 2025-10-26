@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-chart-bar"></i> Analytics Dashboard</h4>
+            </div>
+            <div class="card-body">
+                <!-- Date Range Filter -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startDate">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endDate">
+                    </div>
+                    <div class="col-md-12 mt-2">
+                        <button class="btn btn-primary" onclick="loadChartData()">
+                            <i class="fas fa-sync-alt"></i> Update Charts
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="resetDateRange()">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4" id="statsCards" style="display: none;">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body text-center">
+                                <h6>Total Spent</h6>
+                                <h3 id="totalSpent">$0.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body text-center">
+                                <h6>Categories</h6>
+                                <h3 id="categoryCount">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-info">
+                            <div class="card-body text-center">
+                                <h6>Days Tracked</h6>
+                                <h3 id="daysTracked">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body text-center">
+                                <h6>Avg Daily</h6>
+                                <h3 id="avgDaily">$0.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Spending by Category</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="categoryChart" width="400" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Monthly Trends</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="monthlyChart" width="400" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Daily Spending</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="dailyChart" width="400" height="150"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+// Set default date range to current month
+const today = new Date();
+const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+
+document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+// Load initial chart data
+loadChartData();
+
+function resetDateRange() {
+    document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    loadChartData();
+}
+</script>
+{% endblock %}
