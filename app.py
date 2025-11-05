@@ -1,9 +1,11 @@
+    
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, g
 import sqlite3
-import pandas as pd
+import csv
 from datetime import datetime, timedelta
 import os
 import json
+from io import StringIO
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -292,8 +294,6 @@ def add_category():
     
     return redirect(url_for('categories'))
 
-# ADD THESE MISSING ROUTES:
-
 @app.route('/update-category/<int:category_id>', methods=['POST'])
 def update_category(category_id):
     """Update category"""
@@ -343,7 +343,7 @@ def delete_category(category_id):
 
 @app.route('/export-expenses')
 def export_expenses():
-    """Export expenses to CSV using pandas"""
+    """Export expenses to CSV without pandas"""
     db = get_db()
     
     try:
@@ -354,11 +354,20 @@ def export_expenses():
             ORDER BY date DESC
         ''').fetchall()
         
-        # Convert to pandas DataFrame
-        df = pd.DataFrame(expenses_data, columns=['date', 'amount', 'description', 'category'])
+        # Create CSV using StringIO
+        output = StringIO()
+        writer = csv.writer(output)
         
-        # Create CSV
-        csv_data = df.to_csv(index=False)
+        # Write header
+        writer.writerow(['Date', 'Amount', 'Description', 'Category'])
+        
+        # Write data rows
+        for expense in expenses_data:
+            writer.writerow([expense['date'], expense['amount'], expense['description'], expense['category']])
+        
+        # Get the CSV data
+        csv_data = output.getvalue()
+        output.close()
         
         # Return as downloadable file
         return Response(
