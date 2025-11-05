@@ -8,7 +8,7 @@ import json
 from io import StringIO
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'
+app.secret_key = 'your-secret-key-here-change-this-in-production'
 app.config['DATABASE'] = 'database.db'
 
 def get_db():
@@ -255,13 +255,28 @@ def api_expense_data():
         ORDER BY total DESC
     ''', (start_date, end_date)).fetchall()
     
+    # Get colors for categories
+    category_colors = {}
+    colors = db.execute('SELECT name, color FROM categories').fetchall()
+    for row in colors:
+        category_colors[row['name']] = row['color']
+    
+    labels = []
+    amounts = []
+    colors_list = []
+    
+    for row in category_data:
+        labels.append(row['category'])
+        amounts.append(float(row['total']))
+        colors_list.append(category_colors.get(row['category'], '#007bff'))
+    
     return jsonify({
         'category_data': {
-            'labels': [row['category'] for row in category_data],
-            'amounts': [row['total'] for row in category_data],
-            'colors': ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+            'labels': labels,
+            'amounts': amounts,
+            'colors': colors_list
         },
-        'total_spent': sum(row['total'] for row in category_data)
+        'total_spent': sum(amounts)
     })
 
 @app.route('/categories')
@@ -363,7 +378,12 @@ def export_expenses():
         
         # Write data rows
         for expense in expenses_data:
-            writer.writerow([expense['date'], expense['amount'], expense['description'], expense['category']])
+            writer.writerow([
+                expense['date'], 
+                expense['amount'], 
+                expense['description'], 
+                expense['category']
+            ])
         
         # Get the CSV data
         csv_data = output.getvalue()
@@ -378,6 +398,54 @@ def export_expenses():
     except Exception as e:
         flash(f'Error exporting data: {str(e)}', 'error')
         return redirect(url_for('expenses'))
+
+@app.route('/import-expenses', methods=['GET', 'POST'])
+def import_expenses():
+    """Import expenses from CSV"""
+    if request.method == 'POST':
+        if 'csv_file' not in request.files:
+            flash('No file selected', 'error')
+            return redirect(request.url)
+        
+        file = request.files['csv_file']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(request.url)
+        
+        if file and file.filename.endswith('.csv'):
+            try:
+                db = get_db()
+                stream = StringIO(file.stream.read().decode("UTF8"), newline=None)
+                csv_reader = csv.reader(stream)
+                
+                # Skip header
+                next(csv_reader, None)
+                
+                imported_count = 0
+                for row in csv_reader:
+                    if len(row) >= 4:
+                        date, amount, description, category = row[:4]
+                        try:
+                            amount = float(amount)
+                            db.execute('''
+                                INSERT INTO expenses (date, amount, description, category)
+                                VALUES (?, ?, ?, ?)
+                            ''', (date, amount, description, category))
+                            imported_count += 1
+                        except ValueError:
+                            continue  # Skip rows with invalid amounts
+                
+                db.commit()
+                flash(f'Successfully imported {imported_count} expenses!', 'success')
+                return redirect(url_for('expenses'))
+                
+            except Exception as e:
+                flash(f'Error importing CSV: {str(e)}', 'error')
+        
+        else:
+            flash('Please upload a CSV file', 'error')
+    
+    return render_template('import_expenses.html')
 
 if __name__ == '__main__':
     with app.app_context():
